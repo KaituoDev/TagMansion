@@ -606,8 +606,8 @@ public class Tag2Game extends Game implements Listener {
         humans.clear();
         devils.clear();
         team.unregister();
-        cancelGameTasks();
         running = false;
         gameUUID = UUID.randomUUID();
+        cancelGameTasks();
     }
 }
