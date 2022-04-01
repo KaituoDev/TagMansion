@@ -1,8 +1,5 @@
 package fun.kaituo;
 
-import fun.kaituo.Game;
-import fun.kaituo.PlayerQuitData;
-import fun.kaituo.Tag2;
 import fun.kaituo.event.PlayerChangeGameEvent;
 import fun.kaituo.event.PlayerEndGameEvent;
 import org.bukkit.*;
@@ -136,8 +133,8 @@ public class Tag2Game extends Game implements Listener {
             Location l = edbee.getDamager().getLocation().clone();
             int id = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
                 edbee.getDamager().teleport(l);
-            },1,1);
-            Bukkit.getScheduler().runTaskLater(plugin, ()-> {
+            }, 1, 1);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 Bukkit.getScheduler().cancelTask(id);
             }, 100);
             ((Player) edbee.getDamager()).addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 40, 254, false, false));
@@ -225,8 +222,8 @@ public class Tag2Game extends Game implements Listener {
                         Location l = p.getLocation().clone();
                         int id = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
                             p.teleport(l);
-                        },1,1);
-                        Bukkit.getScheduler().runTaskLater(plugin, ()-> {
+                        }, 1, 1);
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
                             Bukkit.getScheduler().cancelTask(id);
                         }, 100);
                     }
@@ -303,7 +300,7 @@ public class Tag2Game extends Game implements Listener {
             team.setNameTagVisibility(NameTagVisibility.NEVER);
             team.setCanSeeFriendlyInvisibles(false);
             team.setAllowFriendlyFire(true);
-            for (Player p : getPlayersNearHub(50,50,50)) {
+            for (Player p : getPlayersNearHub(50, 50, 50)) {
                 if (scoreboard.getTeam("tag2R").hasPlayer(p)) {
                     devils.add(p);
                     players.add(p);
