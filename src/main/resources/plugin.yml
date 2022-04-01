@@ -1,5 +1,6 @@
 api-version: 1.13
-name: MyGame
-main: fun.kaituo.MyGame
+name: Tag2
+main: fun.kaituo.Tag2
 version: 1.0
+author: YFshadaow
 depend: [GameUtils]
