@@ -466,7 +466,7 @@ public class Tag2Game extends Game implements Listener {
                             }
                         }
                     }
-                }, 1100, 1200));
+                }, 20 * countDownSeconds + 1000, 1200));
 
 
                 taskIds.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
@@ -527,7 +527,7 @@ public class Tag2Game extends Game implements Listener {
                     }
                     tag2.getObjective("tag2").getScore("剩余人数").setScore(humans.size());
                     tag2.getObjective("tag2").getScore("剩余时间").setScore((int) ((gameTime - (time - startTime)) / 20));
-                }, 500, 1));
+                }, 20 * countDownSeconds + 400, 1));
             }
         };
     }
