@@ -85,7 +85,7 @@ public class Tag2Game extends Game implements Listener {
 
     private Tag2Game(Tag2 plugin) {
         this.plugin = plugin;
-        initializeGame(plugin, "Tag2", "§c鬼抓人§f-§c洋馆", new Location(world, -1000, 202, 0), new BoundingBox(-1044, 45, -25, -983, 70, 27));
+        initializeGame(plugin, "Tag2", "§c洋馆", new Location(world, -1000, 202, 0), new BoundingBox(-1044, 45, -25, -983, 70, 27));
         initializeButtons(new Location(world, -1000, 203, 5), BlockFace.NORTH,
                 new Location(world, -1005, 204, 0), BlockFace.EAST);
         players = Tag2.players;
