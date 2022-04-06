@@ -441,7 +441,7 @@ public class Tag2Game extends Game implements Listener {
                             }
                         }
                     }
-                }, 500, 20));
+                }, 20 * countDownSeconds + 400, 20));
 
                 taskIds.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
                     for (Player p : players) {
