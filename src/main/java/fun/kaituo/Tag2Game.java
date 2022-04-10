@@ -334,6 +334,7 @@ public class Tag2Game extends Game implements Listener {
                 humans.clear();
                 team.unregister();
             } else {
+                startTime = getTime(world) + countDownSeconds * 20 + 400;
                 running = true;
                 for (int i = -1004; i <= -996; i++) {
                     world.getBlockAt(i, 199, 4).setType(Material.AIR);
@@ -414,7 +415,6 @@ public class Tag2Game extends Game implements Listener {
                         p.sendTitle("§e游戏开始！", null, 2, 16, 2);
                         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1f, 2f);
                     }
-                    startTime = getTime(world);
                 }, 20 * countDownSeconds + 400);
 
                 taskIds.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
