@@ -301,11 +301,11 @@ public class Tag2Game extends Game implements Listener {
             team.setCanSeeFriendlyInvisibles(false);
             team.setAllowFriendlyFire(true);
             for (Player p : getPlayersNearHub(50, 50, 50)) {
-                if (scoreboard.getTeam("tag2R").hasPlayer(p)) {
+                if (scoreboard.getTeam("tag2devil").hasPlayer(p)) {
                     devils.add(p);
                     players.add(p);
                     team.addPlayer(p);
-                } else if (scoreboard.getTeam("tag2B").hasPlayer(p)) {
+                } else if (scoreboard.getTeam("tag2human").hasPlayer(p)) {
                     humans.add(p);
                     players.add(p);
                     team.addPlayer(p);
