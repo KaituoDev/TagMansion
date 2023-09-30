@@ -1,7 +1,9 @@
-package fun.kaituo;
+package fun.kaituo.tagmansion;
 
-import fun.kaituo.event.PlayerChangeGameEvent;
-import fun.kaituo.event.PlayerEndGameEvent;
+import fun.kaituo.gameutils.Game;
+import fun.kaituo.gameutils.PlayerQuitData;
+import fun.kaituo.gameutils.event.PlayerChangeGameEvent;
+import fun.kaituo.gameutils.event.PlayerEndGameEvent;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
@@ -35,10 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static fun.kaituo.GameUtils.*;
 
-public class Tag2Game extends Game implements Listener {
-    private static final Tag2Game instance = new Tag2Game((Tag2) Bukkit.getPluginManager().getPlugin("Tag2"));
+public class TagMansionGame extends Game implements Listener {
+    private static final TagMansionGame instance = new TagMansionGame((TagMansion) Bukkit.getPluginManager().getPlugin("TagMansion"));
     Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
     Scoreboard tag2 = Bukkit.getScoreboardManager().getNewScoreboard();
     List<Player> humans = new ArrayList<>();
@@ -83,17 +84,18 @@ public class Tag2Game extends Game implements Listener {
             new Location(world, -1010, 63, 0)
     };
 
-    private Tag2Game(Tag2 plugin) {
+    private TagMansionGame(TagMansion plugin) {
         this.plugin = plugin;
-        initializeGame(plugin, "Tag2", "§c洋馆", new Location(world, -1000, 202, 0), new BoundingBox(-1044, 45, -25, -983, 70, 27));
+        initializeGame(plugin, "TagMansion", "§c洋馆", new Location(world, -1000, 202, 0));
         initializeButtons(new Location(world, -1000, 203, 5), BlockFace.NORTH,
                 new Location(world, -1005, 204, 0), BlockFace.EAST);
-        players = Tag2.players;
+        initializeGameRunnable();
+        players = TagMansion.players;
         tag2.registerNewObjective("tag2", "dummy", "鬼抓人");
         tag2.getObjective("tag2").setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
-    public static Tag2Game getInstance() {
+    public static TagMansionGame getInstance() {
         return instance;
     }
 
@@ -283,19 +285,11 @@ public class Tag2Game extends Game implements Listener {
         }
     }
 
-    @EventHandler
-    public void onPlayerChangeGame(PlayerChangeGameEvent pcge) {
-        players.remove(pcge.getPlayer());
-        humans.remove(pcge.getPlayer());
-        devils.remove(pcge.getPlayer());
-    }
 
-
-    @Override
-    protected void initializeGameRunnable() {
+    private void initializeGameRunnable() {
 
         gameRunnable = () -> {
-            gameTime = Tag2.gameTime;
+            gameTime = TagMansion.gameTime;
             team = tag2.registerNewTeam("tag2");
             team.setNameTagVisibility(NameTagVisibility.NEVER);
             team.setCanSeeFriendlyInvisibles(false);
@@ -472,57 +466,15 @@ public class Tag2Game extends Game implements Listener {
                 taskIds.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
                     long time = getTime(world);
                     if (time - startTime > gameTime) {
-                        List<Player> humansCopy = new ArrayList<>(humans);
-                        List<Player> playersCopy = new ArrayList<>(players);
-                        for (Player p : humansCopy) {
-                            spawnFireworks(p);
-                        }
-                        for (Player p : playersCopy) {
-                            p.sendTitle("§e时间到，人类获胜！", null, 5, 50, 5);
-                            p.resetPlayerWeather();
-                            p.resetPlayerTime();
-                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                                p.teleport(new Location(world, -1000, 202, 0));
-                                Bukkit.getPluginManager().callEvent(new PlayerEndGameEvent(p, this));
-                            }, 100);
-                        }
-                        endGame();
+                        endGame("§e时间到，人类获胜！", humans);
                         return;
                     }
-                    if (humans.size() <= 0) {
-                        List<Player> devilsCopy = new ArrayList<>(devils);
-                        List<Player> playersCopy = new ArrayList<>(players);
-                        for (Player p : devilsCopy) {
-                            spawnFireworks(p);
-                        }
-                        for (Player p : playersCopy) {
-                            p.sendTitle("§e无人幸存，鬼获胜！", null, 5, 50, 5);
-                            p.resetPlayerWeather();
-                            p.resetPlayerTime();
-                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                                p.teleport(new Location(world, -1000, 202, 0));
-                                Bukkit.getPluginManager().callEvent(new PlayerEndGameEvent(p, this));
-                            }, 100);
-                        }
-                        endGame();
+                    if (humans.isEmpty()) {
+                        endGame("§e无人幸存，鬼获胜！", devils);
                         return;
                     }
-                    if (devils.size() <= 0) {
-                        List<Player> humansCopy = new ArrayList<>(humans);
-                        List<Player> playersCopy = new ArrayList<>(players);
-                        for (Player p : humansCopy) {
-                            spawnFireworks(p);
-                        }
-                        for (Player p : playersCopy) {
-                            p.sendTitle("§e鬼不复存在，人类获胜！", null, 5, 50, 5);
-                            p.resetPlayerWeather();
-                            p.resetPlayerTime();
-                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                                p.teleport(new Location(world, -1000, 202, 0));
-                                Bukkit.getPluginManager().callEvent(new PlayerEndGameEvent(p, this));
-                            }, 100);
-                        }
-                        endGame();
+                    if (devils.isEmpty()) {
+                        endGame("§e鬼不复存在，人类获胜！", humans);
                         return;
                     }
                     tag2.getObjective("tag2").getScore("剩余人数").setScore(humans.size());
@@ -531,11 +483,14 @@ public class Tag2Game extends Game implements Listener {
             }
         };
     }
-
-    public void savePlayerQuitData(Player p) throws IOException {
+    @Override
+    protected void quit(Player p) throws IOException {
+        if (!players.contains(p)) {
+            return;
+        }
         PlayerQuitData quitData = new PlayerQuitData(p, this, gameUUID);
         quitData.getData().put("team", whichGroup(p));
-        setPlayerQuitData(p.getUniqueId(), quitData);
+        gameUtils.setPlayerQuitData(p.getUniqueId(), quitData);
         players.remove(p);
         humans.remove(p);
         devils.remove(p);
@@ -565,16 +520,16 @@ public class Tag2Game extends Game implements Listener {
         }
     }
 
-    public void rejoin(Player p) {
+    public boolean rejoin(Player p) {
         if (!running) {
             p.sendMessage("§c游戏已经结束！");
-            return;
+            return false;
         }
-        if (!getPlayerQuitData(p.getUniqueId()).getGameUUID().equals(gameUUID)) {
+        if (!gameUtils.getPlayerQuitData(p.getUniqueId()).getGameUUID().equals(gameUUID)) {
             p.sendMessage("§c游戏已经结束！");
-            return;
+            return false;
         }
-        PlayerQuitData pqd = getPlayerQuitData(p.getUniqueId());
+        PlayerQuitData pqd = gameUtils.getPlayerQuitData(p.getUniqueId());
         pqd.restoreBasicData(p);
         players.add(p);
         team.addPlayer(p);
@@ -582,10 +537,39 @@ public class Tag2Game extends Game implements Listener {
         if (pqd.getData().get("team") != null) {
             ((List<Player>) pqd.getData().get("team")).add(p);
         }
-        setPlayerQuitData(p.getUniqueId(), null);
+        gameUtils.setPlayerQuitData(p.getUniqueId(), null);
+        return true;
     }
 
-    private void endGame() {
+    @Override
+    protected boolean join(Player p) {
+        p.setBedSpawnLocation(hubLocation, true);
+        p.teleport(hubLocation);
+        return true;
+    }
+
+    @Override
+    protected void forceStop() {
+        if (running) {
+            endGame("§c游戏被强制终止", new ArrayList<>());
+        }
+    }
+
+    private void endGame(String msg, List<Player> winningPlayers) {
+        List<Player> winningPlayersCopy = new ArrayList<>(winningPlayers);
+        List<Player> playersCopy = new ArrayList<>(players);
+        for (Player p : winningPlayersCopy) {
+            spawnFireworks(p);
+        }
+        for (Player p : playersCopy) {
+            p.sendTitle(msg, null, 5, 50, 5);
+            p.resetPlayerWeather();
+            p.resetPlayerTime();
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                p.teleport(new Location(world, -1000, 202, 0));
+                Bukkit.getPluginManager().callEvent(new PlayerEndGameEvent(p, this));
+            }, 100);
+        }
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (int i = -1004; i <= -996; i++) {
                 world.getBlockAt(i, 199, 4).setType(Material.REDSTONE_BLOCK);

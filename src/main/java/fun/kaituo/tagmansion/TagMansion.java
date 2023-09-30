@@ -1,6 +1,7 @@
-package fun.kaituo;
+package fun.kaituo.tagmansion;
 
-import fun.kaituo.event.PlayerChangeGameEvent;
+import fun.kaituo.gameutils.GameUtils;
+import fun.kaituo.gameutils.event.PlayerChangeGameEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,15 +18,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
 
-import static fun.kaituo.GameUtils.unregisterGame;
-import static fun.kaituo.GameUtils.world;
 
-public class Tag2 extends JavaPlugin implements Listener {
+public class TagMansion extends JavaPlugin implements Listener {
+    private GameUtils gameUtils;
     static List<Player> players;
     static long gameTime;
 
-    public static Tag2Game getGameInstance() {
-        return Tag2Game.getInstance();
+    public static TagMansionGame getGameInstance() {
+        return TagMansionGame.getInstance();
     }
 
     @EventHandler
@@ -36,8 +36,8 @@ public class Tag2 extends JavaPlugin implements Listener {
         if (!pie.getClickedBlock().getType().equals(Material.OAK_BUTTON)) {
             return;
         }
-        if (pie.getClickedBlock().getLocation().equals(new Location(world, -1000, 203, 5))) {
-            Tag2Game.getInstance().startGame();
+        if (pie.getClickedBlock().getLocation().equals(new Location(gameUtils.getWorld(), -1000, 203, 5))) {
+            TagMansionGame.getInstance().startGame();
         }
     }
 
@@ -70,13 +70,14 @@ public class Tag2 extends JavaPlugin implements Listener {
     }
 
     public void onEnable() {
+        gameUtils = (GameUtils) Bukkit.getPluginManager().getPlugin("GameUtils");
         players = new ArrayList<>();
         Bukkit.getPluginManager().registerEvents(this, this);
         gameTime = 6000;
-        Sign sign = (Sign) world.getBlockAt(-1000, 204, 5).getState();
+        Sign sign = (Sign) gameUtils.getWorld().getBlockAt(-1000, 204, 5).getState();
         sign.setLine(2, "当前时间为 " + gameTime / 1200 + " 分钟");
         sign.update();
-        GameUtils.registerGame(getGameInstance());
+        gameUtils.registerGame(getGameInstance());
     }
 
     public void onDisable() {
@@ -84,11 +85,11 @@ public class Tag2 extends JavaPlugin implements Listener {
         HandlerList.unregisterAll((Plugin) this);
         if (players.size() > 0) {
             for (Player p : players) {
-                p.teleport(new Location(world, 0.5, 89.0, 0.5));
+                p.teleport(new Location(gameUtils.getWorld(), 0.5, 89.0, 0.5));
                 Bukkit.getPluginManager().callEvent(new PlayerChangeGameEvent(p, getGameInstance(), null));
             }
         }
-        unregisterGame(getGameInstance());
+        gameUtils.unregisterGame(getGameInstance());
     }
 
 }
