@@ -1,95 +1,108 @@
 package fun.kaituo.tagmansion;
 
 import fun.kaituo.gameutils.GameUtils;
-import fun.kaituo.gameutils.event.PlayerChangeGameEvent;
+import fun.kaituo.gameutils.game.Game;
+import fun.kaituo.tagmansion.character.Adventurer;
+import fun.kaituo.tagmansion.state.HuntState;
+import fun.kaituo.tagmansion.state.ReadyState;
+import fun.kaituo.tagmansion.state.WaitState;
+import fun.kaituo.tagmansion.util.PlayerData;
+import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+public class TagMansion extends Game {
+    private static TagMansion instance;
+    public static TagMansion inst() { return instance; }
+
+    @Getter private Scoreboard mainBoard;
+    @Getter private Scoreboard tagBoard;
+    @Getter private Team tagTeam;
+
+    public final Set<UUID> playerIds = new HashSet<>();
+    public final Map<UUID, PlayerData> idDataMap = new HashMap<>();
+    public final Map<UUID, Class<? extends PlayerData>> playerCharacterChoices = new HashMap<>();
 
 
-public class TagMansion extends JavaPlugin implements Listener {
-    private GameUtils gameUtils;
-    static List<Player> players;
-    static long gameTime;
-
-    public static TagMansionGame getGameInstance() {
-        return TagMansionGame.getInstance();
+    public Set<Player> getPlayers() {
+        Set<Player> players = new HashSet<>();
+        for (UUID id : playerIds) {
+            Player p = Bukkit.getPlayer(id);
+            assert p != null;
+            players.add(p);
+        }
+        return players;
     }
 
-    @EventHandler
-    public void onButtonClicked(PlayerInteractEvent pie) {
-        if (!pie.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-            return;
-        }
-        if (!pie.getClickedBlock().getType().equals(Material.OAK_BUTTON)) {
-            return;
-        }
-        if (pie.getClickedBlock().getLocation().equals(new Location(gameUtils.getWorld(), -1000, 203, 5))) {
-            TagMansionGame.getInstance().startGame();
-        }
+    @SuppressWarnings("deprecation")
+    @Override
+    public void addPlayer(Player p) {
+        p.setBedSpawnLocation(location, true);
+        playerIds.add(p.getUniqueId());
+        p.setScoreboard(tagBoard);
+        playerCharacterChoices.putIfAbsent(p.getUniqueId(), Adventurer.class);
+        super.addPlayer(p);
     }
 
-    @EventHandler
-    public void setGameTime(PlayerInteractEvent pie) {
-        if (pie.getClickedBlock() == null) {
-            return;
-        }
-        Location location = pie.getClickedBlock().getLocation();
-        long x = location.getBlockX();
-        long y = location.getBlockY();
-        long z = location.getBlockZ();
-        if (x == -1000 && y == 204 && z == 5) {
-            switch ((int) gameTime) {
-                case 3600:
-                case 6000:
-                case 8400:
-                    gameTime += 2400;
-                    break;
-                case 10800:
-                    gameTime = 3600;
-                    break;
-                default:
-                    break;
-            }
-            Sign sign = (Sign) pie.getClickedBlock().getState();
-            sign.setLine(2, "当前时间为 " + gameTime / 1200 + " 分钟");
-            sign.update();
-        }
+    @Override
+    public void removePlayer(Player p) {
+        p.setScoreboard(mainBoard);
+        playerIds.remove(p.getUniqueId());
+        super.removePlayer(p);
     }
 
+    @Override
+    public void forceStop() {
+        super.forceStop();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+    }
+
+    private void initScoreboard() {
+        ScoreboardManager manager = Bukkit.getScoreboardManager();
+        mainBoard = manager.getMainScoreboard();
+        tagBoard = manager.getNewScoreboard();
+
+        tagTeam = tagBoard.registerNewTeam("tag");
+        tagTeam.setAllowFriendlyFire(true);
+        tagTeam.setCanSeeFriendlyInvisibles(false);
+        tagTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
+    }
+
+    private void initStates() {
+        WaitState.INST.init();
+        ReadyState.INST.init();
+        HuntState.INST.init();
+    }
+
+    @Override
     public void onEnable() {
-        gameUtils = (GameUtils) Bukkit.getPluginManager().getPlugin("GameUtils");
-        players = new ArrayList<>();
-        Bukkit.getPluginManager().registerEvents(this, this);
-        gameTime = 6000;
-        Sign sign = (Sign) gameUtils.getWorld().getBlockAt(-1000, 204, 5).getState();
-        sign.setLine(2, "当前时间为 " + gameTime / 1200 + " 分钟");
-        sign.update();
-        gameUtils.registerGame(getGameInstance());
+        super.onEnable();
+
+        instance = this;
+        saveDefaultConfig();
+        updateExtraInfo("§c洋馆", getLoc("hub"));
+        initScoreboard();
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            initStates();
+            setState(WaitState.INST);
+        }, 1);
     }
 
+    @Override
     public void onDisable() {
-        Bukkit.getScheduler().cancelTasks(this);
-        HandlerList.unregisterAll((Plugin) this);
-        for (Player p: Bukkit.getOnlinePlayers()) {
-            if (gameUtils.getPlayerGame(p) == getGameInstance()) {
-                Bukkit.dispatchCommand(p, "join Lobby");
-            }
+        for (Player p : getPlayers()) {
+            removePlayer(p);
+            GameUtils.inst().join(p, GameUtils.inst().getLobby());
         }
-        gameUtils.unregisterGame(getGameInstance());
+        this.state.exit();
+        Bukkit.getScheduler().cancelTasks(this);
+        super.onDisable();
     }
-
 }
-
