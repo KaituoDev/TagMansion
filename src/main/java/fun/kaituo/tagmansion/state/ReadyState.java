@@ -10,7 +10,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.HashSet;
 import java.util.Set;
 
-import static fun.kaituo.gameutils.util.Misc.displayCountDown;
+import static fun.kaituo.gameutils.util.Misc.displayCountdown;
 
 public class ReadyState implements GameState {
     public static final int COUNTDOWN_SECONDS = 10;
@@ -28,7 +28,7 @@ public class ReadyState implements GameState {
     public void enter() {
         for (Player p : game.getPlayers()) {
             addPlayer(p);
-            taskIds.addAll(displayCountDown(p, COUNTDOWN_SECONDS, game));
+            taskIds.addAll(displayCountdown(p, COUNTDOWN_SECONDS, game));
         }
         taskIds.add(Bukkit.getScheduler().runTaskLater(game, () -> {
             game.setState(HuntState.INST);
