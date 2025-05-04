@@ -40,7 +40,7 @@ public class TagMansion extends Game {
     @SuppressWarnings("deprecation")
     @Override
     public void addPlayer(Player p) {
-        p.setBedSpawnLocation(location, true);
+        p.setBedSpawnLocation(getGameTeleportLocation(), true);
         playerIds.add(p.getUniqueId());
         p.setScoreboard(tagBoard);
         playerCharacterChoices.putIfAbsent(p.getUniqueId(), Adventurer.class);
